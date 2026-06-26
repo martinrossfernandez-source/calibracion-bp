@@ -355,14 +355,14 @@ function EmployeeTable() {
           const correo  = (row['Correo'] ?? '').trim()
           const manager = (row['Manager'] ?? '').trim()
           const correoMgr = (row['Correo Manager'] ?? '').trim()
-          if (!nombre)    { errors.push(`Fila ${i + 2}: Nombre obligatorio`);         return }
-          if (!correo)    { errors.push(`Fila ${i + 2}: Correo obligatorio`);         return }
-          if (!manager)   { errors.push(`Fila ${i + 2}: Manager obligatorio`);        return }
-          if (!correoMgr) { errors.push(`Fila ${i + 2}: Correo Manager obligatorio`); return }
+          if (!nombre)    { errors.push(`Fila ${i + 2}: columna "Nombre" vacía`); return }
+          if (!correo)    { errors.push(`Fila ${i + 2}: columna "Correo" vacía`); return }
+          if (!manager)   { errors.push(`Fila ${i + 2}: columna "Manager" vacía — asegúrate de que la columna se llama exactamente "Manager" y tiene un valor (ej: "Juan Pérez")`); return }
+          if (!correoMgr) { errors.push(`Fila ${i + 2}: columna "Correo Manager" vacía — debe tener el email del líder (ej: "juan.perez@empresa.com")`); return }
           const perf = (row['Rendimiento'] ?? '').toLowerCase().trim()
           const pot  = (row['Potencial'] ?? '').toLowerCase().trim()
-          if (!VALID_LEVELS.includes(perf)) { errors.push(`Fila ${i + 2}: Rendimiento inválido`); return }
-          if (!VALID_LEVELS.includes(pot))  { errors.push(`Fila ${i + 2}: Potencial inválido`); return }
+          if (!VALID_LEVELS.includes(perf)) { errors.push(`Fila ${i + 2}: "Rendimiento" tiene valor "${row['Rendimiento'] ?? ''}" — debe ser "alto", "medio" o "bajo"`); return }
+          if (!VALID_LEVELS.includes(pot))  { errors.push(`Fila ${i + 2}: "Potencial" tiene valor "${row['Potencial'] ?? ''}" — debe ser "alto", "medio" o "bajo"`); return }
           const prevPerf = (row['Rendimiento anterior'] ?? '').toLowerCase().trim()
           const prevPot  = (row['Potencial anterior'] ?? '').toLowerCase().trim()
           useStore.getState().addEmployee()
@@ -380,7 +380,7 @@ function EmployeeTable() {
             prevPotential:   VALID_LEVELS.includes(prevPot)  ? prevPot  as PotentialLevel   : undefined,
           })
         })
-        if (errors.length) setImportError(errors.slice(0, 3).join(' · '))
+        if (errors.length) setImportError(errors.slice(0, 3).join('\n'))
       },
       error: () => setImportError('No se pudo leer el archivo CSV.'),
     })
@@ -445,8 +445,10 @@ function EmployeeTable() {
       />
 
       {importError && (
-        <div style={{ padding: '6px 18px', background: T.dangerBg, fontSize: 12, color: T.danger, borderBottom: `1px solid #FCA5A5` }}>
-          ⚠ {importError}
+        <div style={{ padding: '10px 18px', background: T.dangerBg, fontSize: 12, color: T.danger, borderBottom: `1px solid #FCA5A5`, lineHeight: 1.7 }}>
+          {importError.split('\n').map((line, i) => (
+            <div key={i}>⚠ {line}</div>
+          ))}
         </div>
       )}
 

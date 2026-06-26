@@ -35,7 +35,6 @@ const CAT_LABEL: Record<CategoryId, string> = {
   core: '3. Desempeño esperado', alto: '4. Alto desempeño', promesa: '5. Alta promesa',
 }
 
-const GRADES = ['L2', 'L3', 'L4', 'L5', 'L6', 'L7']
 const CATS: CategoryId[] = ['critico', 'desarrollo', 'core', 'alto', 'promesa']
 
 const PERF_OPTS: { value: PerformanceLevel; label: string }[] = [
@@ -409,13 +408,31 @@ export function PeersLensTab() {
     return ['Todos', ...Array.from(s).sort()]
   }, [employees])
 
+  // All grades from actual data, sorted — must be declared before cohort
+  const allGrades = useMemo(() => {
+    const s = new Set(employees.map(e => e.grade).filter(Boolean) as string[])
+    return Array.from(s).sort()
+  }, [employees])
+
+  // Auto-select first grade when current selection is not in data
+  const effectiveGrade = allGrades.includes(peersFilterGrade) ? peersFilterGrade : (allGrades[0] ?? '')
+
+  // Grade counts — filtered by selected depts
+  const gradeCounts = useMemo(() => {
+    const m: Record<string, number> = {}
+    employees
+      .filter(e => peersFilterDepts.length === 0 || peersFilterDepts.includes(e.area))
+      .forEach(e => { if (e.grade) m[e.grade] = (m[e.grade] ?? 0) + 1 })
+    return m
+  }, [employees, peersFilterDepts])
+
   // Cohort: same grade, filtered depts & manager
   const cohort = useMemo(() => employees.filter(e => {
-    if (e.grade !== peersFilterGrade) return false
+    if (e.grade !== effectiveGrade) return false
     if (peersFilterDepts.length > 0 && !peersFilterDepts.includes(e.area)) return false
     if (peersFilterManager !== 'Todos' && e.managerName !== peersFilterManager) return false
     return true
-  }), [employees, peersFilterGrade, peersFilterDepts, peersFilterManager])
+  }), [employees, effectiveGrade, peersFilterDepts, peersFilterManager])
 
   // Effective category per employee
   const effCat = (e: Employee): CategoryId =>
@@ -438,16 +455,7 @@ export function PeersLensTab() {
   const isOutlier = (e: Employee) => Math.abs(CAT_NUM[effCat(e)] - medianCatNum) >= 2
 
   const outlierCount = cohort.filter(isOutlier).length
-  const dismissed = consistencyDismissed[peersFilterGrade]
-
-  // Grade counts — filtered by selected depts
-  const gradeCounts = useMemo(() => {
-    const m: Record<string, number> = {}
-    employees
-      .filter(e => peersFilterDepts.length === 0 || peersFilterDepts.includes(e.area))
-      .forEach(e => { if (e.grade) m[e.grade] = (m[e.grade] ?? 0) + 1 })
-    return m
-  }, [employees, peersFilterDepts])
+  const dismissed = consistencyDismissed[effectiveGrade]
 
   if (employees.length === 0) {
     return (
@@ -494,11 +502,15 @@ export function PeersLensTab() {
 
         <div style={{ width: 1, height: 28, background: T.border, flexShrink: 0 }} />
 
-        {/* Grade pills */}
+        {/* Grade pills — derived from actual employee data */}
         <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-          {GRADES.map(g => {
+          {allGrades.length === 0 ? (
+            <span style={{ fontSize: 12, color: T.text3, fontStyle: 'italic' }}>
+              Sin grados cargados — agrega la columna Grado en el CSV
+            </span>
+          ) : allGrades.map(g => {
             const count = gradeCounts[g] ?? 0
-            const active = peersFilterGrade === g
+            const active = effectiveGrade === g
             return (
               <button key={g} onClick={() => setPeersFilterGrade(g)} style={{
                 display: 'flex', alignItems: 'center', gap: 5,
@@ -526,7 +538,7 @@ export function PeersLensTab() {
 
         {/* Cohort size */}
         <div style={{ fontSize: 11, color: T.text3, marginLeft: 'auto' }}>
-          <span style={{ fontWeight: 700, color: T.text1 }}>{cohort.length}</span> personas en {peersFilterGrade}
+          <span style={{ fontWeight: 700, color: T.text1 }}>{cohort.length}</span> personas en {effectiveGrade}
         </div>
       </div>
 
@@ -540,7 +552,7 @@ export function PeersLensTab() {
           <AlertTriangle size={16} color={T.warning} style={{ flexShrink: 0 }} />
           <div style={{ flex: 1 }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: '#92400E' }}>
-              {outlierCount} persona{outlierCount !== 1 ? 's' : ''} parecen inconsistentes en {peersFilterGrade}
+              {outlierCount} persona{outlierCount !== 1 ? 's' : ''} parecen inconsistentes en {effectiveGrade}
             </span>
             <span style={{ fontSize: 12, color: '#92400E', opacity: 0.8, marginLeft: 6 }}>
               — su rating difiere 2+ niveles del resto del grupo. Hacé click sobre las tarjetas marcadas para revisar.
@@ -548,7 +560,7 @@ export function PeersLensTab() {
           </div>
           <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
             <button
-              onClick={() => setConsistencyDismissed(d => ({ ...d, [peersFilterGrade]: true }))}
+              onClick={() => setConsistencyDismissed(d => ({ ...d, [effectiveGrade]: true }))}
               style={{
                 display: 'flex', alignItems: 'center', gap: 5,
                 padding: '5px 12px', borderRadius: 7, border: `1px solid #FCD34D`,
