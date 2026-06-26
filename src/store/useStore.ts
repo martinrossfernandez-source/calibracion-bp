@@ -78,6 +78,7 @@ type Actions = {
   updateCalibration: (id: string, performance?: PerformanceLevel, potential?: PotentialLevel) => void
   clearEmployees: () => void
   clearAll: () => void
+  resetToSample: () => void
 
   // Category names
   updateCategoryName: (id: keyof CategoryNames, name: string) => void
@@ -298,10 +299,16 @@ export const useStore = create<State & Actions>()(
     companyOKRs: { enableWeights: false, objectives: [] },
     deptOKRs: {},
   }),
+  resetToSample: () => set({
+    employees: SAMPLE_EMPLOYEES,
+    companyOKRs: SAMPLE_COMPANY_OKRS,
+    deptOKRs: SAMPLE_DEPT_OKRS_BY_AREA,
+  }),
     }),
     {
       name: 'calibracion-hr-store',
       partialize: (s) => ({
+        employees:         s.employees,
         companyOKRs:       s.companyOKRs,
         deptOKRs:          s.deptOKRs,
         challengedIds:     s.challengedIds,

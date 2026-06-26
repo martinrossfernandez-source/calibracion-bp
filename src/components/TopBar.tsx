@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
-import { X, ShieldCheck } from 'lucide-react'
+import { X, ShieldCheck, RotateCcw } from 'lucide-react'
 import { useStore } from '../store/useStore'
 import type { AppTab } from '../types'
 
@@ -42,9 +42,10 @@ const STEPS = [
 ]
 
 export function TopBar() {
-  const { activeTab, setTab, clearAll, setTab: goToTab } = useStore()
+  const { activeTab, setTab, clearAll, resetToSample, setTab: goToTab } = useStore()
   const [open, setOpen] = useState(false)
   const [privOpen, setPrivOpen] = useState(false)
+  const [resetOpen, setResetOpen] = useState(false)
 
   const handleStart = () => {
     clearAll()
@@ -108,6 +109,25 @@ export function TopBar() {
 
         {/* Right buttons */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          {/* Reset to sample */}
+          <button
+            onClick={() => setResetOpen(true)}
+            title="Volver a datos de muestra"
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: 32, height: 32,
+              background: 'transparent',
+              color: T.text3,
+              border: `1px solid ${T.border}`,
+              borderRadius: 8,
+              cursor: 'pointer',
+              flexShrink: 0,
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = T.primary; (e.currentTarget as HTMLElement).style.color = T.primary }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = T.border; (e.currentTarget as HTMLElement).style.color = T.text3 }}
+          >
+            <RotateCcw size={14} />
+          </button>
           <button
             onClick={() => setPrivOpen(true)}
             title="Seguridad de datos"
@@ -145,6 +165,71 @@ export function TopBar() {
           </button>
         </div>
       </div>
+
+      {/* Reset confirmation modal */}
+      {resetOpen && createPortal(
+        <div
+          onClick={(e) => { if (e.target === e.currentTarget) setResetOpen(false) }}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 1000,
+            background: 'rgba(17,24,39,0.45)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 24,
+          }}
+        >
+          <div style={{
+            background: T.surface, borderRadius: 16,
+            width: '100%', maxWidth: 420,
+            boxShadow: '0 24px 64px rgba(0,0,0,0.14)',
+            overflow: 'hidden',
+          }}>
+            <div style={{ padding: '22px 24px 0', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ fontSize: 18 }}>⚠️</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: T.text1, marginTop: 6 }}>
+                  ¿Volver a los datos de muestra?
+                </div>
+                <div style={{ fontSize: 13, color: T.text2, marginTop: 8, lineHeight: 1.65, maxWidth: 340 }}>
+                  Se eliminará toda la información que hayas cargado o modificado — empleados, OKRs y calibraciones — y se volverá a mostrar la información ficticia de muestra.
+                </div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#DC2626', marginTop: 10 }}>
+                  Esta acción no se puede deshacer.
+                </div>
+              </div>
+              <button
+                onClick={() => setResetOpen(false)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: T.text3, flexShrink: 0 }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div style={{ padding: '20px 24px', display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setResetOpen(false)}
+                style={{
+                  background: 'transparent', color: T.text2,
+                  border: `1px solid ${T.border}`, borderRadius: 9,
+                  padding: '9px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                }}
+              >
+                Volver atrás
+              </button>
+              <button
+                onClick={() => { resetToSample(); setResetOpen(false); goToTab('datos') }}
+                style={{
+                  background: '#DC2626', color: 'white',
+                  border: 'none', borderRadius: 9,
+                  padding: '9px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                }}
+              >
+                Sí, restablecer muestra
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {/* Privacy modal */}
       {privOpen && createPortal(
