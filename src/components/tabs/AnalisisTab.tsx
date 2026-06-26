@@ -573,9 +573,17 @@ ${openPrint ? '<script>window.onload=function(){window.print()}<\/script>' : ''}
             </div>
             {anomalies.map(r => {
               const topPct = Math.round((r.counts.alto + r.counts.promesa) / r.total * 100)
+              const deptOKR = deptOKRs[r.area] ?? EMPTY_OKR
+              const deptPct = Math.round(okrAvg(deptOKR))
+              const hasDeptOKR = deptOKR.objectives.length > 0
               return (
-                <div key={r.area} style={{ fontSize: 11, color: '#78350F' }}>
+                <div key={r.area} style={{ fontSize: 11, color: '#78350F', marginBottom: 2 }}>
                   <strong>{r.area}</strong>: {topPct}% en categorías 4+5 ({r.counts.alto + r.counts.promesa} de {r.total} personas) — revisar justificación.
+                  {hasDeptOKR && (
+                    <span style={{ color: '#92400E', fontWeight: 400 }}>
+                      {' '}Cuenta con <strong>{deptPct}%</strong> de cumplimiento de sus metas.
+                    </span>
+                  )}
                 </div>
               )
             })}
